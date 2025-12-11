@@ -1,6 +1,0 @@
-symbol,weight,expected_return,volatility
-AAPL,0.25,0.12,0.25
-MSFT,0.25,0.10,0.22
-NVDA,0.20,0.18,0.40
-GOOG,0.15,0.11,0.28
-AMZN,0.15,0.14,0.32

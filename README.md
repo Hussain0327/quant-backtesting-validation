@@ -1,334 +1,209 @@
-# Quantitative Systems Simulator
+# Algorithmic Trading Research Platform
 
-**Portfolio Risk Analysis | Monte Carlo Simulation | Statistical Analytics**
+A modular backtesting framework for developing, testing, and evaluating trading strategies on historical market data.
 
-*A hybrid Python + C++ system for quantitative research and portfolio risk management*
+![Dashboard](screenshots/dashboard.png)
 
 ---
 
 ## Overview
 
-The **Quantitative Systems Simulator (QSS)** is a high-performance portfolio risk analysis engine that combines:
+This platform provides a complete workflow for algorithmic trading research:
 
-- **C++17** for computationally intensive Monte Carlo simulations
-- **Python** for data orchestration, visualization, and reporting
-- **pybind11** for seamless Python-C++ integration
-
-This architecture demonstrates real-world quantitative finance systems where performance-critical code runs in C++ while maintaining Python's ease of use for data science workflows.
-
----
-
-## System Architecture
-
-```
-+-------------------------------------------------------------------------+
-|                         USER INPUT LAYER                                 |
-|                  (Portfolio CSV / API Data / Returns)                    |
-+-------------------------------------------------------------------------+
-                                    |
-                                    v
-+-------------------------------------------------------------------------+
-|                      PYTHON INGESTION LAYER                              |
-|  +-----------+  +-----------+  +-----------+  +-----------+             |
-|  |  pandas   |  |  Data     |  | Portfolio |  |  Config   |             |
-|  |  Reader   |  |  Cleaning |  | Validation|  |  Setup    |             |
-|  +-----------+  +-----------+  +-----------+  +-----------+             |
-+-------------------------------------------------------------------------+
-                                    |
-                                    v
-+-------------------------------------------------------------------------+
-|                    C++ SIMULATION CORE (pybind11)                        |
-|  +-------------------------------------------------------------------+  |
-|  |                   Monte Carlo Engine                               |  |
-|  |  +-----------+  +-----------+  +-----------+                      |  |
-|  |  |  Random   |  |  Cholesky |  |  GBM Path |                      |  |
-|  |  |  Generator|  |  Decomp   |  | Simulation|                      |  |
-|  |  +-----------+  +-----------+  +-----------+                      |  |
-|  |  +-----------+  +-----------+  +-----------+                      |  |
-|  |  | Variance  |  |  Multi-   |  |  Risk     |                      |  |
-|  |  | Reduction |  |  Threading|  |  Metrics  |                      |  |
-|  |  +-----------+  +-----------+  +-----------+                      |  |
-|  +-------------------------------------------------------------------+  |
-+-------------------------------------------------------------------------+
-                                    |
-                                    v
-+-------------------------------------------------------------------------+
-|                   STATISTICAL ANALYSIS LAYER                             |
-|  +-----------+  +-----------+  +-----------+  +-----------+             |
-|  | VaR/CVaR  |  | Hypothesis|  | Confidence|  |Distribution|            |
-|  |Calculation|  |  Testing  |  | Intervals |  |  Fitting   |            |
-|  +-----------+  +-----------+  +-----------+  +-----------+             |
-+-------------------------------------------------------------------------+
-                                    |
-                                    v
-+-------------------------------------------------------------------------+
-|                    VISUALIZATION & REPORTING                             |
-|  +-----------+  +-----------+  +-----------+  +-----------+             |
-|  |Distribution|  |  Path     |  |Correlation|  | JSON/HTML |            |
-|  |   Plots   |  | Simulation|  |  Heatmaps |  |  Reports  |            |
-|  +-----------+  +-----------+  +-----------+  +-----------+             |
-+-------------------------------------------------------------------------+
-```
-
----
-
-## Performance Benchmark
-
-The C++ core provides significant performance improvements over pure Python:
-
-```
-===========================================================================
-QUANTITATIVE SYSTEMS SIMULATOR - PERFORMANCE BENCHMARK
-===========================================================================
-
-System: 8 CPU cores available
-
----------------------------------------------------------------------------
-PERFORMANCE COMPARISON (100,000 simulations)
----------------------------------------------------------------------------
-  C++ Parallel (8 threads):  1.50s
-  C++ Single-threaded:       6.59s
-  Python + NumPy:            4.91s
-  Python Naive (loops):    177.00s
-
-SPEEDUP vs NAIVE PYTHON
----------------------------------------------------------------------------
-  C++ Parallel:   118x faster
-  C++ Single:      27x faster
-  NumPy:           36x faster
-===========================================================================
-```
-
-**Key Insight**: Multi-threaded C++ bypasses Python's GIL, achieving **3.3x speedup over NumPy** and **118x over naive Python**.
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.13 (I'm using a virtual environment)
-- CMake 3.14+
-- A C++17 compatible compiler (clang on macOS)
-- pybind11
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/quantitative-systems-simulator.git
-cd quantitative-systems-simulator
-
-# Create and activate virtual environment
-python3.13 -m venv venv
-source venv/bin/activate
-
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Build the C++ extension
-cd cpp_core
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release \
-  -Dpybind11_DIR=$(python -m pybind11 --cmakedir) \
-  -DPYBIND11_FINDPYTHON=ON \
-  -DPython_EXECUTABLE=$(which python)
-make -j4
-
-# Copy the compiled module to the Python package
-cp qss_core*.so ../../python/qss/
-cd ../..
-```
-
-### Running the Demo
-
-```bash
-source venv/bin/activate
-python main.py
-```
-
-### Running the Benchmark
-
-```bash
-python benchmark.py
-```
-
-### Jupyter Notebook
-
-The notebook in `notebooks/simulation_analysis.ipynb` walks through the entire workflow with explanations.
+- **Data Pipeline** - Fetch and store historical price data
+- **Strategy Framework** - Modular system for implementing trading strategies
+- **Backtesting Engine** - Simulate trades with realistic transaction costs
+- **Analytics** - Performance metrics and risk analysis
+- **Visualization** - Interactive dashboard for strategy evaluation
 
 ---
 
 ## Features
 
-### Monte Carlo Engine (C++)
-
 | Feature | Description |
 |---------|-------------|
-| **Multi-threaded Simulation** | Parallel execution across all CPU cores |
-| **Correlated Returns** | Cholesky decomposition for asset correlation |
-| **Variance Reduction** | Antithetic and stratified sampling |
-| **GBM Paths** | Geometric Brownian Motion simulation |
-| **Risk Metrics** | VaR, CVaR, Sharpe, Max Drawdown |
+| Data Fetching | Pull historical OHLCV data from Yahoo Finance |
+| Local Storage | SQLite database for caching price data |
+| Multiple Strategies | MA Crossover, RSI, Momentum (easily extensible) |
+| Train/Test Split | Validate strategies against unseen data |
+| Cost Modeling | Commission and slippage simulation |
+| Risk Metrics | Sharpe ratio, max drawdown, win rate |
+| Interactive Dashboard | Streamlit-based UI for parameter tuning |
 
-### Statistical Analysis (Python)
+---
 
-| Feature | Description |
-|---------|-------------|
-| **Hypothesis Testing** | t-tests, Jarque-Bera, Shapiro-Wilk |
-| **Confidence Intervals** | Mean, variance, Sharpe ratio CIs |
-| **Distribution Fitting** | Normal, Student-t, Log-normal |
-| **Power Analysis** | Sample size determination |
+## Quick Start
 
-### Visualization
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-- Return distribution (histogram + KDE)
-- Monte Carlo path simulations
-- Correlation heatmaps
-- VaR confidence bands
-- Convergence analysis
+# Run backtest from command line
+python main.py
+
+# Launch interactive dashboard
+streamlit run app.py
+```
+
+---
+
+## Demo Output
+
+```
+fetching data...
+running backtest with MA Crossover...
+
+--- train results ---
+return: -13.08%
+sharpe: -0.62
+max drawdown: -29.35%
+trades: 9
+
+--- test results ---
+return: 1.39%
+sharpe: 0.23
+max drawdown: -2.82%
+trades: 3
+```
+
+---
+
+## Dashboard
+
+The Streamlit dashboard allows you to:
+
+- Select any ticker symbol
+- Choose and configure strategies
+- Adjust train/test split ratio
+- Visualize equity curves and trade execution
+- Compare performance metrics
+
+![Equity Curve](screenshots/equity_curve.png)
 
 ---
 
 ## Project Structure
 
 ```
-quantitative-systems-simulator/
-├── cpp_core/
-│   ├── include/
-│   │   ├── random_generator.hpp    # RNG with variance reduction
-│   │   ├── portfolio.hpp           # Portfolio data structures
-│   │   ├── monte_carlo.hpp         # MC engine (single + parallel)
-│   │   └── statistics.hpp          # Statistical functions
-│   ├── src/
-│   │   ├── random_generator.cpp
-│   │   ├── portfolio.cpp
-│   │   ├── monte_carlo.cpp
-│   │   ├── statistics.cpp
-│   │   └── bindings.cpp            # pybind11 Python bindings
-│   └── CMakeLists.txt
-├── python/
-│   └── qss/
-│       ├── __init__.py
-│       ├── orchestrator.py         # Main workflow coordinator
-│       ├── analytics.py            # Statistical analysis
-│       ├── visualization.py        # Plotting and dashboards
-│       └── interface.py            # C++ bridge with Python fallback
+├── main.py                 # CLI entry point
+├── app.py                  # Streamlit dashboard
+│
 ├── data/
-│   ├── sample_portfolio.csv
-│   └── example_results.json
-├── notebooks/
-│   └── simulation_analysis.ipynb   # Interactive analysis
-├── output/                         # Generated reports
-├── main.py                         # Demo script
-├── benchmark.py                    # Performance benchmark
-├── requirements.txt
-├── setup.py
-└── README.md
+│   ├── fetcher.py          # Yahoo Finance API wrapper
+│   └── database.py         # SQLite storage layer
+│
+├── strategies/
+│   ├── base.py             # Abstract strategy interface
+│   ├── moving_average.py   # MA Crossover implementation
+│   ├── rsi.py              # RSI strategy
+│   └── momentum.py         # Momentum strategy
+│
+├── backtest/
+│   ├── engine.py           # Core backtesting logic
+│   └── costs.py            # Transaction cost modeling
+│
+├── analytics/
+│   └── metrics.py          # Performance calculations
+│
+└── screenshots/            # Documentation images
 ```
 
 ---
 
-## Example Output
+## Strategies
 
-```
-============================================================
-PORTFOLIO RISK METRICS
-============================================================
-Expected Annual Return:      11.95%
-Volatility:                  26.37%
-Sharpe Ratio:                  0.38
+### Moving Average Crossover
 
-Value at Risk (95%):        -25.87%
-Value at Risk (99%):        -36.57%
-CVaR / ES (95%):            -32.25%
-CVaR / ES (99%):            -40.67%
+Classic trend-following strategy. Generates buy signals when the short-term moving average crosses above the long-term moving average, and sell signals on the opposite crossover.
 
-Skewness:                     0.731
-Excess Kurtosis:              0.990
-Avg Max Drawdown:            21.05%
-============================================================
-```
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `short_window` | 20 | Short MA period |
+| `long_window` | 50 | Long MA period |
 
----
+### RSI (Relative Strength Index)
 
-## Mathematical Foundation
+Mean reversion strategy based on the RSI indicator. Buys when RSI indicates oversold conditions and sells when overbought.
 
-### Portfolio Return Simulation
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `period` | 14 | RSI calculation period |
+| `oversold` | 30 | Buy threshold |
+| `overbought` | 70 | Sell threshold |
 
-For a portfolio with weights w and asset returns R:
+### Momentum
 
-```
-L_i = w^T * R_i
-```
+Trend-following strategy based on price momentum. Takes long positions when momentum is positive over the lookback period.
 
-where R_i ~ N(mu, Sigma) with covariance matrix Sigma.
-
-### Correlated Asset Simulation
-
-Using Cholesky decomposition Sigma = L * L^T:
-
-```
-R = mu + L * Z
-```
-
-where Z ~ N(0, I) is a vector of independent standard normals.
-
-### Risk Metrics
-
-**Value at Risk (VaR)**:
-```
-VaR_alpha = Quantile(L, 1 - alpha)
-```
-
-**Conditional VaR (Expected Shortfall)**:
-```
-CVaR_alpha = E[L | L > VaR_alpha]
-```
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `lookback` | 20 | Momentum calculation period |
 
 ---
 
-## Technologies
+## Performance Metrics
 
-| Category | Technologies |
-|----------|-------------|
-| **Languages** | C++17, Python 3.13 |
-| **C++ Libraries** | STL, `<random>`, `<thread>`, `<future>` |
-| **Python Binding** | pybind11 |
-| **Data Science** | NumPy, pandas, SciPy, statsmodels |
-| **Visualization** | Matplotlib, Plotly, Seaborn |
-| **Build System** | CMake, setuptools |
+| Metric | Description |
+|--------|-------------|
+| **Total Return** | Overall profit/loss as percentage |
+| **Sharpe Ratio** | Risk-adjusted return (annualized) |
+| **Max Drawdown** | Largest peak-to-trough decline |
+| **Win Rate** | Percentage of profitable trades |
 
 ---
 
-## Where I Left Off
+## How It Works
 
-The core system is fully functional. Here's what's working:
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Fetch Data │ ──▶ │   Strategy  │ ──▶ │  Backtest   │
+│  (yfinance) │     │  (signals)  │     │  (simulate) │
+└─────────────┘     └─────────────┘     └─────────────┘
+                                               │
+                                               ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Report    │ ◀── │  Analytics  │ ◀── │   Results   │
+│  (metrics)  │     │  (metrics)  │     │  (trades)   │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
 
-1. **C++ Monte Carlo Engine** - Built and integrated via pybind11. The parallel engine uses all CPU cores and bypasses Python's GIL for real speedups.
+1. **Data Fetching** - Historical OHLCV data is pulled from Yahoo Finance
+2. **Train/Test Split** - Data is split (default 70/30) to validate strategy generalization
+3. **Signal Generation** - Strategy processes price data and outputs buy/sell signals
+4. **Trade Simulation** - Backtest engine executes trades with transaction costs
+5. **Performance Analysis** - Metrics are calculated on both train and test periods
 
-2. **Benchmark Script** - Shows the C++ parallel implementation is 118x faster than naive Python and 3.3x faster than NumPy.
+The train/test split is crucial for detecting overfitting. A strategy that performs well on training data but poorly on test data is likely overfit to historical patterns.
 
-3. **Demo (main.py)** - Runs a full simulation and outputs risk metrics.
+---
 
-4. **Jupyter Notebook** - Complete walkthrough of the system.
+## Dependencies
 
-5. **Visualizations** - Distribution plots and path simulations are generated in `/output`.
+| Package | Purpose |
+|---------|---------|
+| `numpy` | Numerical operations |
+| `pandas` | Data manipulation |
+| `yfinance` | Market data API |
+| `streamlit` | Interactive dashboard |
+| `plotly` | Interactive charts |
+| `matplotlib` | Static visualizations |
 
-### Next Steps
+---
 
-- [ ] GPU acceleration (CUDA/OpenCL)
-- [ ] Options pricing (Black-Scholes, Greeks)
-- [ ] Bayesian updating of return distributions
-- [ ] Streamlit/Dash web interface
-- [ ] Real-time market data integration
+## Roadmap
+
+- [ ] Bollinger Bands strategy
+- [ ] Mean reversion strategy
+- [ ] Parameter optimization / grid search
+- [ ] Volume-based slippage model
+- [ ] Strategy comparison view
+- [ ] Export results to CSV
+- [ ] Multi-asset portfolio support
 
 ---
 
 ## License
 
-MIT License - 2025 Raja Hussain
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-
-**Built with C++ and Python for Quantitative Finance**
+Free to use, modify, and distribute.
