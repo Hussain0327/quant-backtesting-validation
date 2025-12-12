@@ -1,20 +1,33 @@
-# Algorithmic Trading Research Platform
+# Algorithmic Trading Research
 
-A modular backtesting framework for developing, testing, and evaluating trading strategies on historical market data.
+A backtesting system for testing trading strategies against historical market data with statistical validation.
 
 ![Dashboard](screenshots/dashboard.png)
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Strategies](#strategies)
+- [Statistical Analysis](#statistical-analysis)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+
+---
+
 ## Overview
 
-This platform provides a complete workflow for algorithmic trading research:
+This project tests whether trading strategies actually outperform random chance. It combines backtesting with statistical significance testing to separate real edges from noise.
 
-- **Data Pipeline** - Fetch and store historical price data
-- **Strategy Framework** - Modular system for implementing trading strategies
-- **Backtesting Engine** - Simulate trades with realistic transaction costs
-- **Analytics** - Performance metrics and risk analysis
-- **Visualization** - Interactive dashboard for strategy evaluation
+**Core workflow:**
+1. Fetch historical price data
+2. Generate buy/sell signals using a strategy
+3. Simulate trades with transaction costs
+4. Evaluate performance with statistical tests
 
 ---
 
@@ -22,188 +35,112 @@ This platform provides a complete workflow for algorithmic trading research:
 
 | Feature | Description |
 |---------|-------------|
-| Data Fetching | Pull historical OHLCV data from Yahoo Finance |
-| Local Storage | SQLite database for caching price data |
-| Multiple Strategies | MA Crossover, RSI, Momentum (easily extensible) |
-| Train/Test Split | Validate strategies against unseen data |
+| Multiple Strategies | MA Crossover, RSI, Momentum, Pairs Trading, Bollinger Bands |
+| Train/Test Split | Validates strategies on unseen data |
+| Statistical Testing | Bootstrap CI, permutation tests, Monte Carlo simulation |
+| Benchmark Comparison | Compare against buy-and-hold baseline |
+| Interactive Dashboard | Streamlit UI for parameter tuning |
 | Cost Modeling | Commission and slippage simulation |
-| Risk Metrics | Sharpe ratio, max drawdown, win rate |
-| Interactive Dashboard | Streamlit-based UI for parameter tuning |
 
 ---
 
-## Quick Start
+## Installation
 
 ```bash
-# Install dependencies
+git clone https://github.com/yourusername/algorithmic-trading-research.git
+cd algorithmic-trading-research
 pip install -r requirements.txt
+```
 
-# Run backtest from command line
+---
+
+## Usage
+
+**Command Line:**
+```bash
 python main.py
+```
 
-# Launch interactive dashboard
+**Dashboard:**
+```bash
 streamlit run app.py
 ```
 
----
-
-## Demo Output
-
-```
-fetching data...
-running backtest with MA Crossover...
-
---- train results ---
-return: -13.08%
-sharpe: -0.62
-max drawdown: -29.35%
-trades: 9
-
---- test results ---
-return: 1.39%
-sharpe: 0.23
-max drawdown: -2.82%
-trades: 3
-```
-
----
-
-## Dashboard
-
-The Streamlit dashboard allows you to:
-
-- Select any ticker symbol
-- Choose and configure strategies
-- Adjust train/test split ratio
-- Visualize equity curves and trade execution
-- Compare performance metrics
-
 ![Equity Curve](screenshots/equity_curve.png)
+
+---
+
+## Strategies
+
+| Strategy | Type | Logic |
+|----------|------|-------|
+| **MA Crossover** | Trend-following | Buy when short MA > long MA |
+| **RSI** | Mean reversion | Buy oversold, sell overbought |
+| **Momentum** | Trend-following | Trade in direction of recent returns |
+| **Pairs Trading** | Statistical arbitrage | Mean reversion on z-score spread |
+| **Bollinger Bands** | Mean reversion | Buy at lower band, sell at mean |
+
+---
+
+## Statistical Analysis
+
+Every backtest runs three significance tests:
+
+| Test | Question |
+|------|----------|
+| **Sharpe CI** | Is the Sharpe ratio significantly different from zero? |
+| **Permutation Test** | Does it beat buy-and-hold? |
+| **Monte Carlo** | Does it beat random entry/exit? |
+
+**Interpretation:**
+- 3/3 pass → Strong evidence of edge
+- 2/3 pass → Needs more investigation
+- 0-1/3 pass → Likely noise
 
 ---
 
 ## Project Structure
 
 ```
-├── main.py                 # CLI entry point
 ├── app.py                  # Streamlit dashboard
-│
-├── data/
-│   ├── fetcher.py          # Yahoo Finance API wrapper
-│   └── database.py         # SQLite storage layer
+├── main.py                 # CLI entry point
+├── requirements.txt
 │
 ├── strategies/
-│   ├── base.py             # Abstract strategy interface
-│   ├── moving_average.py   # MA Crossover implementation
-│   ├── rsi.py              # RSI strategy
-│   └── momentum.py         # Momentum strategy
+│   ├── base.py             # Abstract strategy class
+│   ├── moving_average.py
+│   ├── rsi.py
+│   ├── momentum.py
+│   └── pairs_trading.py
 │
 ├── backtest/
-│   ├── engine.py           # Core backtesting logic
-│   └── costs.py            # Transaction cost modeling
+│   ├── engine.py           # Core simulation logic
+│   └── costs.py            # Transaction cost model
 │
 ├── analytics/
-│   └── metrics.py          # Performance calculations
+│   ├── metrics.py          # Performance metrics
+│   └── significance.py     # Statistical tests
 │
-└── screenshots/            # Documentation images
+└── data/
+    ├── fetcher.py          # Yahoo Finance API
+    └── database.py         # SQLite storage
 ```
 
 ---
 
-## Strategies
+## Tech Stack
 
-### Moving Average Crossover
-
-Classic trend-following strategy. Generates buy signals when the short-term moving average crosses above the long-term moving average, and sell signals on the opposite crossover.
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `short_window` | 20 | Short MA period |
-| `long_window` | 50 | Long MA period |
-
-### RSI (Relative Strength Index)
-
-Mean reversion strategy based on the RSI indicator. Buys when RSI indicates oversold conditions and sells when overbought.
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `period` | 14 | RSI calculation period |
-| `oversold` | 30 | Buy threshold |
-| `overbought` | 70 | Sell threshold |
-
-### Momentum
-
-Trend-following strategy based on price momentum. Takes long positions when momentum is positive over the lookback period.
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `lookback` | 20 | Momentum calculation period |
-
----
-
-## Performance Metrics
-
-| Metric | Description |
-|--------|-------------|
-| **Total Return** | Overall profit/loss as percentage |
-| **Sharpe Ratio** | Risk-adjusted return (annualized) |
-| **Max Drawdown** | Largest peak-to-trough decline |
-| **Win Rate** | Percentage of profitable trades |
-
----
-
-## How It Works
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Fetch Data │ ──▶ │   Strategy  │ ──▶ │  Backtest   │
-│  (yfinance) │     │  (signals)  │     │  (simulate) │
-└─────────────┘     └─────────────┘     └─────────────┘
-                                               │
-                                               ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Report    │ ◀── │  Analytics  │ ◀── │   Results   │
-│  (metrics)  │     │  (metrics)  │     │  (trades)   │
-└─────────────┘     └─────────────┘     └─────────────┘
-```
-
-1. **Data Fetching** - Historical OHLCV data is pulled from Yahoo Finance
-2. **Train/Test Split** - Data is split (default 70/30) to validate strategy generalization
-3. **Signal Generation** - Strategy processes price data and outputs buy/sell signals
-4. **Trade Simulation** - Backtest engine executes trades with transaction costs
-5. **Performance Analysis** - Metrics are calculated on both train and test periods
-
-The train/test split is crucial for detecting overfitting. A strategy that performs well on training data but poorly on test data is likely overfit to historical patterns.
-
----
-
-## Dependencies
-
-| Package | Purpose |
-|---------|---------|
-| `numpy` | Numerical operations |
-| `pandas` | Data manipulation |
-| `yfinance` | Market data API |
-| `streamlit` | Interactive dashboard |
-| `plotly` | Interactive charts |
-| `matplotlib` | Static visualizations |
-
----
-
-## Roadmap
-
-- [ ] Bollinger Bands strategy
-- [ ] Mean reversion strategy
-- [ ] Parameter optimization / grid search
-- [ ] Volume-based slippage model
-- [ ] Strategy comparison view
-- [ ] Export results to CSV
-- [ ] Multi-asset portfolio support
+| Component | Technology |
+|-----------|------------|
+| Language | Python |
+| Data | pandas, numpy |
+| Statistics | scipy |
+| Market Data | yfinance |
+| Dashboard | Streamlit |
+| Visualization | Plotly |
 
 ---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-Free to use, modify, and distribute.
+MIT
