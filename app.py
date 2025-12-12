@@ -16,7 +16,7 @@ from analytics.significance import (
     bootstrap_sharpe_confidence_interval,
     permutation_test_vs_baseline,
     monte_carlo_under_null,
-    test_return_distribution
+    analyze_return_distribution
 )
 
 # Page config
@@ -197,79 +197,261 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Strategy Templates with recommended settings
+STRATEGY_TEMPLATES = {
+    'MA Crossover': {
+        'description': 'Trend-following strategy that generates buy signals when a short-term moving average crosses above a long-term moving average, and sell signals when it crosses below.',
+        'how_it_works': '**Buy** when Short MA > Long MA (uptrend) | **Sell** when Short MA < Long MA (downtrend)',
+        'best_for': 'Trending markets with clear directional moves',
+        'min_days': 120,
+        'recommended': {
+            'short_window': 20,
+            'long_window': 50,
+        },
+        'params_help': {
+            'short_window': 'Fast-moving average period. Lower = more sensitive to recent prices.',
+            'long_window': 'Slow-moving average period. Higher = smoother, fewer false signals.',
+        }
+    },
+    'RSI': {
+        'description': 'Mean reversion strategy using the Relative Strength Index. Buys when assets are oversold and sells when overbought.',
+        'how_it_works': '**Buy** when RSI < Oversold (e.g., 30) | **Sell** when RSI > Overbought (e.g., 70)',
+        'best_for': 'Range-bound markets with clear support/resistance',
+        'min_days': 60,
+        'recommended': {
+            'period': 14,
+            'oversold': 30,
+            'overbought': 70,
+        },
+        'params_help': {
+            'period': 'RSI calculation period. Standard is 14 days.',
+            'oversold': 'Buy threshold. Below this = oversold, potential bounce.',
+            'overbought': 'Sell threshold. Above this = overbought, potential pullback.',
+        }
+    },
+    'Momentum': {
+        'description': 'Trend-following strategy that trades in the direction of recent price movement. Assumes trends persist.',
+        'how_it_works': '**Buy** when momentum > 0 (price rising) | **Sell** when momentum < 0 (price falling)',
+        'best_for': 'Strong trending markets, momentum stocks',
+        'min_days': 90,
+        'recommended': {
+            'lookback': 20,
+        },
+        'params_help': {
+            'lookback': 'Period to measure momentum. Higher = longer-term trend, fewer signals.',
+        }
+    },
+    'Pairs Trading': {
+        'description': 'Statistical arbitrage strategy that trades mean reversion of price spread using z-scores.',
+        'how_it_works': '**Buy** when z-score < -Entry Z (undervalued) | **Sell** when z-score > Entry Z (overvalued)',
+        'best_for': 'Correlated assets, market-neutral strategies',
+        'min_days': 90,
+        'recommended': {
+            'lookback': 20,
+            'entry_z': 2.0,
+            'exit_z': 0.5,
+        },
+        'params_help': {
+            'lookback': 'Period for calculating mean and standard deviation.',
+            'entry_z': 'Z-score threshold to enter trade. Higher = fewer but stronger signals.',
+            'exit_z': 'Z-score threshold to exit trade. Lower = exit closer to mean.',
+        }
+    },
+    'Bollinger Bands': {
+        'description': 'Mean reversion strategy using Bollinger Bands. Buys at lower band (oversold) and sells at upper band or mean.',
+        'how_it_works': '**Buy** when price < Lower Band | **Sell** when price > Mean or Upper Band',
+        'best_for': 'Range-bound markets, volatility trading',
+        'min_days': 90,
+        'recommended': {
+            'lookback': 20,
+            'num_std': 2.0,
+        },
+        'params_help': {
+            'lookback': 'Period for calculating moving average and bands.',
+            'num_std': 'Number of standard deviations for bands. Higher = wider bands, fewer signals.',
+        }
+    }
+}
+
 # Sidebar Configuration
 with st.sidebar:
     st.markdown("### Configuration")
     st.markdown("---")
 
-    # Market Data Section
-    st.markdown("**Market Data**")
-    ticker = st.text_input('Ticker Symbol', value='AAPL', help="Enter any valid stock ticker (e.g., AAPL, MSFT, GOOGL)")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        start_date = st.date_input('Start', value=datetime.now() - timedelta(days=730))
-    with col2:
-        end_date = st.date_input('End', value=datetime.now())
-
-    st.markdown("---")
-
-    # Strategy Section
+    # Strategy Section FIRST - so we can set date defaults
     st.markdown("**Strategy Selection**")
     strategy_name = st.selectbox(
         'Strategy',
-        ['MA Crossover', 'RSI', 'Momentum', 'Pairs Trading', 'Bollinger Bands'],
+        list(STRATEGY_TEMPLATES.keys()),
         help="Select a trading strategy to backtest"
     )
 
-    # Dynamic strategy parameters
-    st.markdown("**Parameters**")
+    # Get template for selected strategy
+    template = STRATEGY_TEMPLATES[strategy_name]
+
+    # Strategy info expander
+    with st.expander("ℹ️ About this strategy", expanded=False):
+        st.markdown(f"**{strategy_name}**")
+        st.markdown(template['description'])
+        st.markdown(f"**How it works:** {template['how_it_works']}")
+        st.markdown(f"**Best for:** {template['best_for']}")
+        st.caption(f"Recommended minimum: {template['min_days']} trading days")
+
+    st.markdown("---")
+
+    # Market Data Section - with smart defaults based on strategy
+    st.markdown("**Market Data**")
+    ticker = st.text_input('Ticker Symbol', value='AAPL', help="Enter any valid stock ticker (e.g., AAPL, MSFT, GOOGL, NVDA)")
+
+    # Calculate recommended start date based on strategy
+    recommended_days = template['min_days']
+    default_start = datetime(2025, 1, 1)  # Start of current year
+    default_end = datetime.now()
+
+    # Ensure we have enough days
+    days_in_range = (default_end - default_start).days
+    if days_in_range < recommended_days:
+        default_start = default_end - timedelta(days=int(recommended_days * 1.5))
+
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input('Start', value=default_start, help=f"Recommended: at least {recommended_days} trading days")
+    with col2:
+        end_date = st.date_input('End', value=default_end)
+
+    # Show data range info
+    date_diff = (end_date - start_date).days
+    trading_days_approx = int(date_diff * 0.7)  # Rough estimate
+    if trading_days_approx < recommended_days:
+        st.warning(f"⚠️ ~{trading_days_approx} trading days. Recommended: {recommended_days}+")
+    else:
+        st.success(f"✓ ~{trading_days_approx} trading days")
+
+    st.markdown("---")
+
+    # Strategy Parameters with help text
+    st.markdown("**Strategy Parameters**")
+
     if strategy_name == 'MA Crossover':
-        st.caption("Trend-following: trades moving average crossovers")
-        short_window = st.slider('Short MA', 5, 50, 20)
-        long_window = st.slider('Long MA', 20, 200, 50)
+        short_window = st.slider(
+            'Short MA Period',
+            5, 50,
+            template['recommended']['short_window'],
+            help=template['params_help']['short_window']
+        )
+        long_window = st.slider(
+            'Long MA Period',
+            20, 200,
+            template['recommended']['long_window'],
+            help=template['params_help']['long_window']
+        )
+        if short_window >= long_window:
+            st.error("Short MA must be less than Long MA")
         strategy = MovingAverageCrossover(short_window, long_window)
-        min_data_points = long_window + 10
+        min_data_points = long_window + 5
+
     elif strategy_name == 'RSI':
-        st.caption("Mean reversion: buys oversold, sells overbought")
-        period = st.slider('RSI Period', 5, 30, 14)
-        oversold = st.slider('Oversold', 10, 40, 30)
-        overbought = st.slider('Overbought', 60, 90, 70)
+        period = st.slider(
+            'RSI Period',
+            5, 30,
+            template['recommended']['period'],
+            help=template['params_help']['period']
+        )
+        oversold = st.slider(
+            'Oversold Threshold',
+            10, 40,
+            template['recommended']['oversold'],
+            help=template['params_help']['oversold']
+        )
+        overbought = st.slider(
+            'Overbought Threshold',
+            60, 90,
+            template['recommended']['overbought'],
+            help=template['params_help']['overbought']
+        )
         strategy = RSIStrategy(period, oversold, overbought)
-        min_data_points = period + 10
+        min_data_points = period + 5
+
     elif strategy_name == 'Momentum':
-        st.caption("Trend-following: trades recent price direction")
-        lookback = st.slider('Lookback', 5, 60, 20)
+        lookback = st.slider(
+            'Lookback Period',
+            5, 60,
+            template['recommended']['lookback'],
+            help=template['params_help']['lookback']
+        )
         strategy = MomentumStrategy(lookback)
-        min_data_points = lookback + 10
+        min_data_points = lookback + 5
+
     elif strategy_name == 'Pairs Trading':
-        st.caption("Statistical arbitrage: z-score mean reversion")
-        lookback = st.slider('Lookback', 10, 50, 20)
-        entry_z = st.slider('Entry Z', 1.0, 3.0, 2.0)
-        exit_z = st.slider('Exit Z', 0.0, 1.5, 0.5)
+        lookback = st.slider(
+            'Lookback Period',
+            10, 50,
+            template['recommended']['lookback'],
+            help=template['params_help']['lookback']
+        )
+        entry_z = st.slider(
+            'Entry Z-Score',
+            1.0, 3.0,
+            template['recommended']['entry_z'],
+            help=template['params_help']['entry_z']
+        )
+        exit_z = st.slider(
+            'Exit Z-Score',
+            0.0, 1.5,
+            template['recommended']['exit_z'],
+            help=template['params_help']['exit_z']
+        )
         strategy = PairsTradingStrategy(lookback, entry_z, exit_z)
-        min_data_points = lookback + 10
+        min_data_points = lookback + 5
+
     else:  # Bollinger Bands
-        st.caption("Mean reversion: Bollinger Band breakouts")
-        lookback = st.slider('Lookback', 10, 50, 20)
-        num_std = st.slider('Std Devs', 1.0, 3.0, 2.0)
+        lookback = st.slider(
+            'Lookback Period',
+            10, 50,
+            template['recommended']['lookback'],
+            help=template['params_help']['lookback']
+        )
+        num_std = st.slider(
+            'Standard Deviations',
+            1.0, 3.0,
+            template['recommended']['num_std'],
+            help=template['params_help']['num_std']
+        )
         strategy = SpreadMeanReversionStrategy(lookback, num_std)
-        min_data_points = lookback + 10
+        min_data_points = lookback + 5
 
     st.markdown("---")
 
     # Backtest Settings
     st.markdown("**Backtest Settings**")
-    initial_capital = st.number_input('Initial Capital ($)', value=10000, step=1000, min_value=100)
-    train_split = st.slider('Train/Test Split', 0.5, 0.9, 0.7)
+    initial_capital = st.number_input(
+        'Initial Capital ($)',
+        value=10000,
+        step=1000,
+        min_value=100,
+        help="Starting portfolio value for the simulation"
+    )
+    train_split = st.slider(
+        'Train/Test Split',
+        0.5, 0.9, 0.7,
+        help="Portion of data for training. Remaining is for out-of-sample testing."
+    )
 
     st.markdown("---")
 
     # Statistical Testing
     st.markdown("**Statistical Testing**")
-    run_significance = st.checkbox('Run Significance Tests', value=True)
+    run_significance = st.checkbox(
+        'Run Significance Tests',
+        value=True,
+        help="Run bootstrap, permutation, and Monte Carlo tests to validate results"
+    )
     if run_significance:
-        n_bootstrap = st.slider('Samples', 1000, 10000, 5000)
+        n_bootstrap = st.slider(
+            'Bootstrap Samples',
+            1000, 10000, 5000,
+            help="More samples = more accurate confidence intervals, but slower"
+        )
     else:
         n_bootstrap = 5000
 
@@ -666,7 +848,7 @@ if run_backtest:
                                     mc_test = {'strategy_return': 0, 'null_mean': 0, 'percentile_rank': 50, 'p_value': 1, 'null_95th_percentile': 0, 'significant_at_05': False}
 
                                 try:
-                                    dist_test = test_return_distribution(test_returns)
+                                    dist_test = analyze_return_distribution(test_returns)
                                 except Exception:
                                     dist_test = {'mean_daily': 0, 'std_daily': 0, 'skewness': 0, 'excess_kurtosis': 0, 'var_95': 0, 'is_fat_tailed': False, 'is_negatively_skewed': False}
 

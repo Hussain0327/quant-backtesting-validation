@@ -1,8 +1,8 @@
-# Algorithmic Trading Research
+# Trading Platform
 
-A backtesting system for testing trading strategies against historical market data with statistical validation.
+A professional backtesting system for testing trading strategies against historical market data with statistical validation.
 
-![Dashboard](screenshots/dashboard.png)
+![Trading Platform Dashboard](screenshots/trade_log.png)
 
 ---
 
@@ -15,7 +15,9 @@ A backtesting system for testing trading strategies against historical market da
 - [Strategies](#strategies)
 - [Statistical Analysis](#statistical-analysis)
 - [Project Structure](#project-structure)
-- [Tech Stack](#tech-stack)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
@@ -37,11 +39,15 @@ This project tests whether trading strategies actually outperform random chance.
 | Feature               | Description                                                 |
 | --------------------- | ----------------------------------------------------------- |
 | Multiple Strategies   | MA Crossover, RSI, Momentum, Pairs Trading, Bollinger Bands |
+| Strategy Templates    | Pre-configured settings with educational explanations       |
 | Train/Test Split      | Validates strategies on unseen data                         |
 | Statistical Testing   | Bootstrap CI, permutation tests, Monte Carlo simulation     |
 | Benchmark Comparison  | Compare against buy-and-hold baseline                       |
-| Interactive Dashboard | Streamlit UI for parameter tuning                           |
+| Interactive Dashboard | Professional Streamlit UI with dark theme                   |
 | Cost Modeling         | Commission and slippage simulation                          |
+| Candlestick Charts    | Toggle between line and OHLC candlestick views              |
+
+![Train vs Test Analysis](screenshots/analysis.png)
 
 ---
 
@@ -68,31 +74,33 @@ pip install -r requirements.txt
 
 ## Usage
 
+**Dashboard (Recommended):**
+
+```bash
+streamlit run app.py
+```
+
+![Charts View](screenshots/charts.png)
+
 **Command Line:**
 
 ```bash
 python main.py
 ```
 
-**Dashboard:**
-
-```bash
-streamlit run app.py
-```
-
-![Equity Curve](screenshots/equity_curve.png)
-
 ---
 
 ## Strategies
 
-| Strategy            | Type                  | Logic                                |
-| ------------------- | --------------------- | ------------------------------------ |
-| **MA Crossover**    | Trend-following       | Buy when short MA > long MA          |
-| **RSI**             | Mean reversion        | Buy oversold, sell overbought        |
-| **Momentum**        | Trend-following       | Trade in direction of recent returns |
-| **Pairs Trading**   | Statistical arbitrage | Mean reversion on z-score spread     |
-| **Bollinger Bands** | Mean reversion        | Buy at lower band, sell at mean      |
+Each strategy includes built-in documentation and recommended parameters:
+
+| Strategy            | Type                  | Logic                                | Best For                    |
+| ------------------- | --------------------- | ------------------------------------ | --------------------------- |
+| **MA Crossover**    | Trend-following       | Buy when short MA > long MA          | Trending markets            |
+| **RSI**             | Mean reversion        | Buy oversold, sell overbought        | Range-bound markets         |
+| **Momentum**        | Trend-following       | Trade in direction of recent returns | Strong trending stocks      |
+| **Pairs Trading**   | Statistical arbitrage | Mean reversion on z-score spread     | Correlated assets           |
+| **Bollinger Bands** | Mean reversion        | Buy at lower band, sell at mean      | Volatility trading          |
 
 ---
 
@@ -112,6 +120,8 @@ Every backtest runs three significance tests:
 - 2/3 pass → Needs more investigation
 - 0-1/3 pass → Likely noise
 
+![Statistical Analysis](screenshots/statistics.png)
+
 ---
 
 ## Project Structure
@@ -119,27 +129,59 @@ Every backtest runs three significance tests:
 ```
 ├── app.py                  # Streamlit dashboard
 ├── main.py                 # CLI entry point
-├── requirements.txt
+├── requirements.txt        # Pinned dependencies
 │
 ├── strategies/
 │   ├── base.py             # Abstract strategy class
-│   ├── moving_average.py
-│   ├── rsi.py
-│   ├── momentum.py
-│   └── pairs_trading.py
+│   ├── moving_average.py   # MA Crossover strategy
+│   ├── rsi.py              # RSI strategy
+│   ├── momentum.py         # Momentum strategy
+│   └── pairs_trading.py    # Pairs Trading & Bollinger Bands
 │
 ├── backtest/
 │   ├── engine.py           # Core simulation logic
 │   └── costs.py            # Transaction cost model
 │
 ├── analytics/
-│   ├── metrics.py          # Performance metrics
-│   └── significance.py     # Statistical tests
+│   ├── metrics.py          # Performance metrics (Sharpe, drawdown, etc.)
+│   └── significance.py     # Statistical significance tests
 │
-└── data/
-    ├── fetcher.py          # Yahoo Finance API
-    └── database.py         # SQLite storage
+├── data/
+│   ├── fetcher.py          # Yahoo Finance API wrapper
+│   └── database.py         # SQLite caching
+│
+├── tests/                  # Unit tests
+│   ├── test_strategies.py
+│   ├── test_engine.py
+│   ├── test_metrics.py
+│   └── test_significance.py
+│
+└── .streamlit/
+    └── config.toml         # Dashboard theme configuration
 ```
+
+---
+
+## Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test file
+pytest tests/test_strategies.py -v
+```
+
+---
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
@@ -147,12 +189,13 @@ Every backtest runs three significance tests:
 
 | Component     | Technology    |
 | ------------- | ------------- |
-| Language      | Python        |
+| Language      | Python 3.9+   |
 | Data          | pandas, numpy |
 | Statistics    | scipy         |
 | Market Data   | yfinance      |
 | Dashboard     | Streamlit     |
 | Visualization | Plotly        |
+| Testing       | pytest        |
 
 ---
 

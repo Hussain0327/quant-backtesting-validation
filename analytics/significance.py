@@ -218,7 +218,7 @@ def monte_carlo_under_null(
     return result
 
 
-def test_return_distribution(returns: pd.Series) -> Dict[str, float]:
+def analyze_return_distribution(returns: pd.Series) -> Dict[str, float]:
     """
     Test statistical properties of the return distribution.
 

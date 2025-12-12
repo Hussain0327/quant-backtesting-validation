@@ -6,7 +6,7 @@ from analytics.significance import (
     bootstrap_sharpe_confidence_interval,
     permutation_test_vs_baseline,
     monte_carlo_under_null,
-    test_return_distribution
+    analyze_return_distribution
 )
 
 
@@ -88,7 +88,7 @@ def main():
     print(f"    Significant:        {'YES - beats random' if random_sig else 'NO - not better than random'}")
 
     print('\nAnalyzing return distribution...')
-    dist_test = test_return_distribution(test_returns)
+    dist_test = analyze_return_distribution(test_returns)
     print(f"\n[4] Return Distribution")
     print(f"    Daily Mean:         {dist_test.get('mean_daily', 0)*100:.4f}%")
     print(f"    Daily Std:          {dist_test.get('std_daily', 0)*100:.4f}%")
