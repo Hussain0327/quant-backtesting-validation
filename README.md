@@ -1,4 +1,4 @@
-# Trading Platform
+# Trading Strategy Validation     
 
 A professional backtesting system for testing trading strategies against historical market data with statistical validation.
 
