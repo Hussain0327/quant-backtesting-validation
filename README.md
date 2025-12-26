@@ -16,9 +16,6 @@ npm run dev
 # Build for production
 npm run build
 ```
-
-Visit [http://localhost:3000](http://localhost:3000) to see the dashboard.
-
 ---
 
 ## Features
